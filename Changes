@@ -1,0 +1,8 @@
+Revision history for Perl extension WebService::FreeDB
+
+0.1 Fri Aug 30 16:00:23 MEST 2002
+  - first internal release
+0.3 Fri Sep 20 10:16:27 MEST 2002
+  - bugfixes 
+  - some changes for releasing on CPAN
+
