@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.56';
+$VERSION = '0.61';
 
 #####
 # Description: for getting a instace of this Class
@@ -610,9 +610,12 @@ Now the last step is to print the information to the user.
 These 3 functions print a retrieved disc out.
 
 The XML format outputs according to example/cdcollection.dtd this method
-does not use every information (missing are total-time,tracktime,rest). I
-think this is the point for starting your work: Take %discinfo and write
-where ever you want.
+does not use every information. 
+This Function also prints some additional information out, if given.
+This is, because it is used by other projects, such like music-moth
+(www.moth.de)
+I think this is the point for starting your work: Take %discinfo and write
+whhat ever you want.
 
 =back
 

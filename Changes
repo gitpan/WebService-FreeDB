@@ -45,3 +45,6 @@ Revision history for Perl extension WebService::FreeDB
 0.60 Fri Sep 19 19:25:43 CEST 2003
   - outxml now supports more detailed informations and can be used by 
     other programs, too. Have a look at www.moth.de !
+
+0.61 Fri Sep 26 11:35:12 CEST 2003
+  - new upload to CPAN - version problem
