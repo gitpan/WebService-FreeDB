@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.62';
+$VERSION = '0.63';
 
 #####
 # Description: for getting a instace of this Class
@@ -180,10 +180,10 @@ sub getdiscinfo {
 	}
 	if ($lines[0] =~ /^<h2>(.+) \/ (.+)<\/h2>$/) {
 		$disc{artist} = $1;
-		$disc{cdname} = $2;
+		$disc{album} = $2;
 	} else {
 		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*format error(artist+cdname):$lines[0];\n";
+			print STDERR "*format error(artist+album):$lines[0];\n";
 		}
 	}
 	if ($lines[1] =~ /^tracks:\s*?(\d+)<br>$/) {
@@ -215,7 +215,7 @@ sub getdiscinfo {
 		}
 	}
 	if(!defined($disc{artist})) {$disc{artist} = "";}
-	if(!defined($disc{cdname})) {$disc{cdname} = "";}
+	if(!defined($disc{album})) {$disc{album} = "";}
 	if(!defined($disc{year})) {$disc{year} = "";}
 	if(!defined($disc{genre})) {$disc{genre} = "";}
 	while (!($line =~ /^<table border=0>$/)) { #ignore until begin of tackinfo
@@ -380,7 +380,7 @@ sub outstd {
 		return 1;
 	}
 	print "DiscInfo:\n########\n";
-	print "Artist:".$disc{artist}." - Album: ".$disc{cdname}."\n";
+	print "Artist:".$disc{artist}." - Album: ".$disc{album}."\n";
 	print "Reference:".$disc{url}."\n";
 	print "Total-Tracks:".$disc{tracks}." - Total-Time:".$disc{totaltime}."\n";
 	print "Year:".$disc{year}." - Genre:".$disc{genre}."\n";
@@ -412,7 +412,7 @@ sub outxml {
     if(defined($disc{medium})) {print "\t<medium>".ascii2xml($disc{medium})."</medium>\n";}
     if(defined($disc{id})) {print "\t<id>".ascii2xml($disc{id})."</id>\n";}
     if (defined($disc{artist})) {print "\t<artist>".ascii2xml($disc{artist})."</artist>\n";}
-    print "\t<title>".ascii2xml($disc{cdname})."</title>\n";
+    print "\t<title>".ascii2xml($disc{album})."</title>\n";
     if (defined($disc{year})) {print "\t<year>".ascii2xml($disc{year})."</year>\n";}
     if(defined($disc{source})) {print "\t<source>".ascii2xml($disc{source})."</source>\n";}
     if(defined($disc{quality})) {print "\t<quality>".ascii2xml($disc{quality})."</quality>\n";}
