@@ -1,19 +1,20 @@
 package WebService::FreeDB;
 use Data::Dumper;
-use LWP::Simple;
+use LWP::UserAgent; # Erweiterung jb
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.63';
+$VERSION = '0.7';
 
 #####
 # Description: for getting a instace of this Class
 # Params: %hash with keys:
 #         HOST : Destination host, if not defined: www.freedb.org
 #         PATH : Path on HOST to CGI
-#         DEFAULTVALUES : Default parameters for CGI, will be set allways
+#         PROXY: Define Proxy to use
+#         DEFAULTVALUES : Default parameters for CGI, will be set always
 # Returns: an object of this class
 #####
 sub new {
@@ -27,12 +28,17 @@ sub new {
 	if(!defined($self->{ARG}->{PATH})) {
 		#Path to CGI-script
 		$self->{ARG}->{PATH}='/freedb_search.php'} 
+	if(!defined($self->{ARG}->{PROXY})) {			  
+		#If there's no proxy, define but don't change it		 
+		$self->{ARG}->{PROXY}=''  					  
+	}												  
 	if(!defined($self->{ARG}->{DEFAULTVALUES})) {
 		#default Parameters
-		$self->{ARG}->{DEFAULTVALUES}='allfields=NO&grouping=none'
+		$self->{ARG}->{DEFAULTVALUES}='&allfields=NO&grouping=none'
 	}
 	bless($self, $class);
 	$self ? return $self : return undef;
+	
 }
 
 #####
@@ -83,67 +89,78 @@ sub getdiscs {
 	} else {
 		$url .= "&allcats=YES";
 	}
+	
 	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
 		print STDERR "**url-search: $url;\n" ;
 	}
-	my $data = get($url);
-	@lines = split(/\n/,$data);
-	my $liststart = 0 ;
-	my $lastref;
-	for my $line (@lines) {
-		if($line =~ /^<h2>all categories<\/h2>$/) {
-			$liststart=1;
-		} elsif ( $liststart == 1 && $line =~ /<table border=0>/){
-			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
-				print STDERR "**list start found;\n";
-			}
-			$liststart=2;
-		} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><br><\/tr>/ ) {
-  			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-				print STDERR "***list element found $url;\n";
-			}
-			if(!(defined($discs{$1}))) {
-				$discs{$1} = [$2,$3];
-				$lastref = undef;
-			} else {
-  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-					print STDERR "*already got an disc, taking old one !: $line;\n";
+	
+	my $ua = LWP::UserAgent->new();				
+	$ua->proxy('http' => $self->{ARG}->{PROXY});
+	my $req = HTTP::Request->new(GET => $url);	
+	my $response = $ua->request($req);			
+	if ($response->is_success) {				
+		my $data = $response->content;			
+		@lines = split /\n/, $data ;
+		my $liststart = 0 ;
+		my $lastref;
+		for my $line (@lines) {
+			if($line =~ /^<h2>all categories<\/h2>$/) {
+				$liststart=1;
+			} elsif ( $liststart == 1 && $line =~ /<table border=0>/){
+				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
+					print STDERR "**list start found;\n";
 				}
-			}
-		} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
- 		  	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-				print STDERR "***multilist element found $url;\n";
-			}
-			if(!(defined($discs{$1}))) {
-				$discs{$1} = [$2,$3,$4];
-				$lastref = $1;
-			} else {
-				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			   		print STDERR "*already got an disc, taking old one !: $line;\n";
+				$liststart=2;
+			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><br><\/tr>/ ) {
+  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***list element found $url;\n";
 				}
-			}
-		} elsif (defined($lastref) && $liststart == 2 && $line =~ /^<a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
-			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-				print STDERR "***more multilist element found $url;\n" ;
-			}
-			if(!(defined($discs{$lastref}))) {
-				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-					print STDERR "*but no lastref-element found $url;\n";
+				if(!(defined($discs{$1}))) {
+					$discs{$1} = [$2,$3];
+					$lastref = undef;
+				} else {
+  					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+						print STDERR "*already got an disc, taking old one !: $line;\n";
+					}
 				}
-			} else {
-				push(@{$discs{$lastref}},$1);
-			}
-		} elsif ( $liststart == 2 && $line =~ /^<\/table>$/) {
-			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
-				print STDERR "**list end found;\n";
-			}
-			$liststart = 0;
-		} elsif ($liststart == 2 ) {
-			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-				print STDERR "***unknown line-type, ignoring : $line;\n";
+			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
+ 			  	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***multilist element found $url;\n";
+				}
+				if(!(defined($discs{$1}))) {
+					$discs{$1} = [$2,$3,$4];
+					$lastref = $1;
+				} else {
+					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+				   		print STDERR "*already got an disc, taking old one !: $line;\n";
+					}
+				}
+			} elsif (defined($lastref) && $liststart == 2 && $line =~ /^<a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
+				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***more multilist element found $url;\n" ;
+				}
+				if(!(defined($discs{$lastref}))) {
+					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+						print STDERR "*but no lastref-element found $url;\n";
+					}
+				} else {
+					push(@{$discs{$lastref}},$1);
+				}
+			} elsif ( $liststart == 2 && $line =~ /^<\/table>$/) {
+				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
+					print STDERR "**list end found;\n";
+				}
+				$liststart = 0;
+			} elsif ($liststart == 2 ) {
+				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***unknown line-type, ignoring : $line;\n";
+				}
 			}
 		}
-	}
+	}							   
+	else {						   
+		die $response->status_line;
+	} 							   
 	return %discs;
 }
 
@@ -161,104 +178,111 @@ sub getdiscinfo {
 	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
 		print STDERR "**url-disc:$url;\n";
 	}
-	my $data = get($url);
-	if (!defined($data)) {
-		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*found no disc;\n";
+	my $ua = LWP::UserAgent->new();				
+	$ua->proxy('http' => $self->{ARG}->{PROXY});
+	my $req = HTTP::Request->new(GET => $url);	
+	my $response = $ua->request($req);			
+	if ($response->is_success) {				
+		my $data = $response->content;			
+		if (!defined($data)) {
+			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+				print STDERR "*found no disc;\n";
+			}
+			return ;
 		}
-		return ;
-	}
-	$disc{url} = $url;
-	@lines = split(/\n/,$data);
-	$line = shift(@lines);
-	#ignore until begin of data
-	while (!($line =~ /^<table width="100%" border="0" cellspacing="1" cellpadding="8" bgcolor="#FFFFFF"><tr><td>$/)) {
+		$disc{url} = $url;
+		@lines = split(/\n/,$data);
 		$line = shift(@lines);
-	}
-	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
-		print STDERR "**found start of data :$line;\n"; 
-	}
-	if ($lines[0] =~ /^<h2>(.+) \/ (.+)<\/h2>$/) {
-		$disc{artist} = $1;
-		$disc{album} = $2;
-	} else {
-		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*format error(artist+album):$lines[0];\n";
-		}
-	}
-	if ($lines[1] =~ /^tracks:\s*?(\d+)<br>$/) {
-		$disc{tracks} = $1;
-	} else {
-  		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*format error(tracks):$lines[1];\n";
-		}
-	}
-	if ($lines[2] =~ /^total time:\s*(\d+:\d+)<br>$/) {
-		$disc{totaltime} = $1;
-	} else {
-		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-	 		print STDERR "*format error(totaltime):$lines[2];\n";
-		}
-	}
-	if ($lines[3] =~ /^year:\s*(\d*)<br>$/) {
-		$disc{year} = $1;
-	} else {
-		 if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*format error(year):$lines[3];\n";
-		}
-	}
-	if ($lines[4] =~ /^genre:\s*(.*)<br>$/) {
-		$disc{genre} = $1;
-	} else {
-  		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-			print STDERR "*format error(genre):$lines[4];\n";
-		}
-	}
-	if(!defined($disc{artist})) {$disc{artist} = "";}
-	if(!defined($disc{album})) {$disc{album} = "";}
-	if(!defined($disc{year})) {$disc{year} = "";}
-	if(!defined($disc{genre})) {$disc{genre} = "";}
-	while (!($line =~ /^<table border=0>$/)) { #ignore until begin of tackinfo
-		if ($line =~ /^<br><hr><center><table width="98%"><tr><td bgcolor="#E8E8E8"><pre>$/) {
+		#ignore until begin of data
+		while (!($line =~ /^<table width="100%" border="0" cellspacing="1" cellpadding="8" bgcolor="#FFFFFF"><tr><td>$/)) {
 			$line = shift(@lines);
-			while (!($line =~ /<\/pre><\/tr><\/td><\/table><\/center>/)) {
-				$disc{rest} .= $line."\n";
-				$line = shift(@lines);
+		}
+		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
+			print STDERR "**found start of data :$line;\n"; 
+		}
+		if ($lines[0] =~ /^<h2>(.+) \/ (.+)<\/h2>$/) {
+			$disc{artist} = $1;
+			$disc{album} = $2;
+		} else {
+			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+				print STDERR "*format error(artist+album):$lines[0];\n";
 			}
 		}
-		$line = shift(@lines);
-		if (!defined($line)) {
-			$disc{trackinfo} = defined;
-			return %disc;  #break if not found beginning (empty entries)
-		}
-	}
-	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
-		print STDERR "**found start of trackinfo:$line;\n";
-	}
-	$index = 1;
-	for my $line (@lines) {
-		if ($line =~ /^<br><br><\/td><\/tr>$/) {next;}    
-		elsif ($line =~ /^<font size=small>.*?<\/font>/) {next;} # ignore ext-desc of a track
-		elsif ($line =~ /^<tr><td valign=top> {0,1}$index\.<\/td><td valign=top> {0,1}(\d+:\d+)<\/td><td><b>(.+)<\/b>/) {
-  			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-				print STDERR "***found track: $line;\n";
-			}
-			$disc{trackinfo}[$index-1]=[$2,$1];
-			$index++;
-		} elsif ($line =~ /^<tr><td valign=top> \d+\.<\/td><td valign=top> (\d+:\d+)<\/td><td><b>(.+)<\/b>/) {
+		if ($lines[1] =~ /^tracks:\s*?(\d+)<br>$/) {
+			$disc{tracks} = $1;
+		} else {
   			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-				print STDERR "*out of sync for trackinfo:$line;\n";
+				print STDERR "*format error(tracks):$lines[1];\n";
 			}
-		} elsif ($line =~ /^<\/table>$/) {
-			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
-				print STDERR "**found end of trackinfo & data: $line;\n";
+		}
+		if ($lines[2] =~ /^total time:\s*(\d+:\d+)<br>$/) {
+			$disc{totaltime} = $1;
+		} else {
+			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+	 			print STDERR "*format error(totaltime):$lines[2];\n";
 			}
-		} else {next;}
+		}
+		if ($lines[3] =~ /^year:\s*(\d*)<br>$/) {
+			$disc{year} = $1;
+		} else {
+			 if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+				print STDERR "*format error(year):$lines[3];\n";
+			}
+		}
+		if ($lines[4] =~ /^genre:\s*(.*)<br>$/) {
+			$disc{genre} = $1;
+		} else {
+  			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+				print STDERR "*format error(genre):$lines[4];\n";
+			}
+		}
+		if(!defined($disc{artist})) {$disc{artist} = "";}
+		if(!defined($disc{album})) {$disc{album} = "";}
+		if(!defined($disc{year})) {$disc{year} = "";}
+		if(!defined($disc{genre})) {$disc{genre} = "";}
+		while (!($line =~ /^<table border=0>$/)) { #ignore until begin of tackinfo
+			if ($line =~ /^<br><hr><center><table width="98%"><tr><td bgcolor="#E8E8E8"><pre>$/) {
+				$line = shift(@lines);
+				while (!($line =~ /<\/pre><\/tr><\/td><\/table><\/center>/)) {
+					$disc{rest} .= $line."\n";
+					$line = shift(@lines);
+				}
+			}
+			$line = shift(@lines);
+			if (!defined($line)) {
+				$disc{trackinfo} = defined;
+				return %disc;  #break if not found beginning (empty entries)
+			}
+		}
+		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
+			print STDERR "**found start of trackinfo:$line;\n";
+		}
+		$index = 1;
+		for my $line (@lines) {
+			if ($line =~ /^<br><br><\/td><\/tr>$/) {next;}    
+			elsif ($line =~ /^<font size=small>.*?<\/font>/) {next;} # ignore ext-desc of a track
+			elsif ($line =~ /^<tr><td valign=top> {0,1}$index\.<\/td><td valign=top> {0,1}(\d+:\d+)<\/td><td><b>(.+)<\/b>/) {
+  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***found track: $line;\n";
+				}
+				$disc{trackinfo}[$index-1]=[$2,$1];
+				$index++;
+			} elsif ($line =~ /^<tr><td valign=top> \d+\.<\/td><td valign=top> (\d+:\d+)<\/td><td><b>(.+)<\/b>/) {
+  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+					print STDERR "*out of sync for trackinfo:$line;\n";
+				}
+			} elsif ($line =~ /^<\/table>$/) {
+				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
+					print STDERR "**found end of trackinfo & data: $line;\n";
+				}
+			} else {next;}
 		
-	}
-	return %disc;
-	
-	
+		}
+		return %disc;
+	}								
+	else {							
+		die $response->status_line;	
+	}								
 }
 
 #####
@@ -551,6 +575,10 @@ FreeDB-Server !
 B<PATH>: Path to the php-script (the webinterface)
 
 C</freedb_search.php> is default - so working on www.freedb.org
+
+B<PROXY>: proxy to use for connecting to FreeDB-Server
+
+C<none> is default
 
 B<DEFAULTVALUES>: Values with will be set for every request.
 

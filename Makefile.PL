@@ -20,12 +20,12 @@ sub MY::libscan
 #--- Write the Makefile
 
 WriteMakefile(
-	VERSION   => '0.63',
+	VERSION   => '0.7',
 	NAME      => 'WebService::FreeDB',
 	AUTHOR    => 'Henning Mersch <hm@mystical.de>',
 	ABSTRACT  => 'Module to search a keyword in a FreeDB-Database.',
 	PREREQ_PM => {
-		      'LWP::Simple' => 1.32,
+		      'LWP::UserAgent' => 1.32,
 		      'Test::More' => 0.45,
 		    },
 );

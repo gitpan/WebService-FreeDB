@@ -48,7 +48,13 @@ Revision history for Perl extension WebService::FreeDB
 
 0.61 Fri Sep 26 11:35:12 CEST 2003
   - new upload to CPAN - version problem
+  
 0.62 Fri Sep 26 13:31:31 CEST 2003
   - XML Output closing CD Tag inserted (where has it gone ??? ;-) )
+
 0.63 Oct 31 16:30:50 MET 2003
   - Changed $disc{cdname} to $disc{album}, like supposed to be in FreeDB.
+
+0.7  Wed Nov  5 17:10:11 MET 2003
+  - added proxy support
+    (developed by Joerg Bensch - many THX to him!)
