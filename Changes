@@ -19,6 +19,7 @@ Revision history for Perl extension WebService::FreeDB
 0.41 Wed Oct 23 15:40:41 MEST 2002
   -fixed cdsearch use..
    sorry for this....
+
 0.5 
   -ask4urls now prints a sorted list
   -now empty db-entries does not matter
@@ -26,3 +27,6 @@ Revision history for Perl extension WebService::FreeDB
 
 0.51 
   -version 0.5 comes without subdirs ....better to be fixed !
+
+0.52 Tue Jan 21 11:02:47 CET 2003
+  -Error of incorrect tags corrected (thanks to Geoff for the comments...:-) )

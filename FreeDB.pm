@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.5';
+$VERSION = '0.52';
 
 sub new {
   my $class = shift;
@@ -197,7 +197,7 @@ sub ask4discurls {
   my $self = shift;
   my %discs = %{$_[0]};
   #my @keys = keys (%discs);
-  my @keys = sort { $discs{$a}[0] cmp $discs{$b}[0] || $DIscs{$a}[1] cmp $discs{$b}[1]} keys %discs;   #sort for artists
+  my @keys = sort { $discs{$a}[0] cmp $discs{$b}[0] || $discs{$a}[1] cmp $discs{$b}[1]} keys %discs;   #sort for artists
   my @urls;
   
   if(!defined($keys[0])) {
@@ -322,14 +322,14 @@ sub outxml {
   }
   print "<cd>\n";
   print "\t<artist>".ascii2xml($disc{artist})."</artist>\n";
-  print "\t<titel>".ascii2xml($disc{cdname})."</titel>\n";
+  print "\t<title>".ascii2xml($disc{cdname})."</title>\n";
   if (defined($disc{year})) {print "\t<year>".ascii2xml($disc{year})."</year>\n";}
   print "\t<tracklist>\n";
   for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
 	print "\t\t<track>".ascii2xml(${$disc{trackinfo}}[$i][0])."</track>\n";
   }
   print "\t</tracklist>\n";
-  print "<cd>\n";
+  print "</cd>\n";
 }
 ####
 # gets an string and returns it in xml coding-stadart (&->&amp; ...)
