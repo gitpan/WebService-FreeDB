@@ -30,7 +30,14 @@ Revision history for Perl extension WebService::FreeDB
 
 0.52 Tue Jan 21 11:02:47 CET 2003
   -Error of incorrect tags corrected (thanks to Geoff for the comments...:-) )
+
 0.55 Mon Mar 24 17:50:33 MET 2003
   -Lots of Thanks to Iain Truskett for the patches and other hints.
    They are now implemented. (Well - most of them)
    No more features but corrected spelling, POD, t/freedb.t and Makefile.PL :-)  - Wonderful Iain !
+
+0.56 Mon Jun 16 22:31:40 MEST 2003
+  -No technical new stuff.
+  -more comments 
+  -reformated to 4char indent
+  -mainly 80chars are enough per line - except some lines.
