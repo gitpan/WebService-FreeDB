@@ -41,3 +41,7 @@ Revision history for Perl extension WebService::FreeDB
   -more comments 
   -reformated to 4char indent
   -mainly 80chars are enough per line - except some lines.
+  
+0.60 Fri Sep 19 19:25:43 CEST 2003
+  - outxml now supports more detailed informations and can be used by 
+    other programs, too. Have a look at www.moth.de !

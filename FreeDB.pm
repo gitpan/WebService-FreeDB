@@ -408,20 +408,51 @@ sub outxml {
 		}
 		return 1;
 	}
-	print "<cd>\n";
-	print "\t<artist>"._ascii2xml($disc{artist})."</artist>\n";
-	print "\t<title>"._ascii2xml($disc{cdname})."</title>\n";
-	if (defined($disc{year})) {
-		print "\t<year>"._ascii2xml($disc{year})."</year>\n";
-	}
-	print "\t<tracklist>\n";
-	for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
-		print "\t\t<track>".
-		      _ascii2xml(${$disc{trackinfo}}[$i][0]).
-			  "</track>\n";
-	}
-	print "\t</tracklist>\n";
-	print "</cd>\n";
+    print "<cd type=\"".ascii2xml($disc{type})."\">\n";
+    if(defined($disc{medium})) {print "\t<medium>".ascii2xml($disc{medium})."</medium>\n";}
+    if(defined($disc{id})) {print "\t<id>".ascii2xml($disc{id})."</id>\n";}
+    if (defined($disc{artist})) {print "\t<artist>".ascii2xml($disc{artist})."</artist>\n";}
+    print "\t<title>".ascii2xml($disc{cdname})."</title>\n";
+    if (defined($disc{year})) {print "\t<year>".ascii2xml($disc{year})."</year>\n";}
+    if(defined($disc{source})) {print "\t<source>".ascii2xml($disc{source})."</source>\n";}
+    if(defined($disc{quality})) {print "\t<quality>".ascii2xml($disc{quality})."</quality>\n";}
+    if(defined($disc{comment})) {print "\t<comment>".ascii2xml($disc{comment})."</comment>\n";}
+    print "\t<tracklist>\n";
+    for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
+      my ($artist1,$name1) = split(/ \/ /,${$disc{trackinfo}}[$i][0]);
+      my ($artist2,$name2) = split(/ - /,${$disc{trackinfo}}[$i][0]);
+      if (defined($disc{type}) && $disc{type} eq "sampler" && defined $name1) {
+        print "\t\t<track>\n";
+		if(defined($artist1)) {print "\t\t\t<artist>".ascii2xml($artist1)."</artist>\n";}
+		if(defined($name1)) {print "\t\t\t<name>".ascii2xml($name1)."</name>\n";}
+		if(defined($disc{trackinfo}[$i][1])) {print "\t\t\t<time>".ascii2xml(${$disc{trackinfo}}[$i][1])."</time>\n";}
+		if(defined($disc{trackinfo}[$i][2])) {print "\t\t\t<quality>".ascii2xml(${$disc{trackinfo}}[$i][2])."</quality>\n";}
+		print "\t\t</track>\n";
+        print STDERR "Splitted title ' / ' - highly recommed to check this !\n";                                                                         
+      } elsif (defined($disc{type}) && $disc{type} eq "sampler" && defined $name2) {
+        print "\t\t<track>\n";
+		if(defined($artist2)) {print "\t\t\t<artist>".ascii2xml($artist2)."</artist>\n";}
+		if(defined($name2)) {print "\t\t\t<name>".ascii2xml($name2)."</name>\n";}
+		if(defined($disc{trackinfo}[$i][1])) {print "\t\t\t<time>".ascii2xml(${$disc{trackinfo}}[$i][1])."</time>\n";}
+		if(defined($disc{trackinfo}[$i][2])) {print "\t\t\t<quality>".ascii2xml(${$disc{trackinfo}}[$i][2])."</quality>\n";}
+		print "\t\t</track>\n";
+        print STDERR "Splitted title ' - ' - highly recommed to check this !\n";
+      } elsif (defined($disc{type}) && $disc{type} eq "sampler") {
+        print "\t\t<track>\n";
+		if(defined($disc{trackinfo}[$i][0])) {print "\t\t\t<name>".ascii2xml(${$disc{trackinfo}}[$i][0])."</name>\n";}
+		if(defined($disc{trackinfo}[$i][1])) {print "\t\t\t<time>".ascii2xml(${$disc{trackinfo}}[$i][1])."</time>\n";}
+		if(defined($disc{trackinfo}[$i][2])) {print "\t\t\t<quality>".ascii2xml(${$disc{trackinfo}}[$i][2])."</quality>\n";}
+		print "\t\t</track>\n";
+        print STDERR "NOT Splitted title - highly recommed to check this !\n";
+      } else {
+        print "\t\t<track>\n";
+		if(defined($disc{trackinfo}[$i][0])) {print "\t\t\t<name>".ascii2xml(${$disc{trackinfo}}[$i][0])."</name>\n";}
+		if(defined($disc{trackinfo}[$i][1])) {print "\t\t\t<time>".ascii2xml(${$disc{trackinfo}}[$i][1])."</time>\n";}
+		if(defined($disc{trackinfo}[$i][2])) {print "\t\t\t<quality>".ascii2xml(${$disc{trackinfo}}[$i][2])."</quality>\n";}
+		print "\t\t</track>\n";
+      }
+    }
+    print "\t</tracklist>\n";
 }
 #####
 # Description: PRIVATE - not for use outside !
@@ -429,7 +460,7 @@ sub outxml {
 # Params: <String Ascii encoded>
 # Returns: <String XML encoded>
 #####
-sub _ascii2xml {
+sub ascii2xml {
 	$ascii = $_[0];
 	
 	$ascii =~ s/&/&amp;/g;
