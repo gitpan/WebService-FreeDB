@@ -23,3 +23,6 @@ Revision history for Perl extension WebService::FreeDB
   -ask4urls now prints a sorted list
   -now empty db-entries does not matter
   -xml output will now special coded (& -> &emph; and so on)
+
+0.51 
+  -version 0.5 comes without subdirs ....better to be fixed !
