@@ -1,0 +1,7 @@
+<!ELEMENT  cdcollection (cd+)                                        >
+<!ELEMENT  cd           (artist, title, year?,tracklist)             >
+<!ELEMENT  artist       (#PCDATA)                                    >
+<!ELEMENT  title        (#PCDATA)                                    >
+<!ELEMENT  year         (#PCDATA)                                    >
+<!ELEMENT  tracklist    (track+)                                     >
+<!ELEMENT  track        (#PCDATA)                                    >

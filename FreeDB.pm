@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.3';
+$VERSION = '0.4';
 
 sub new {
   my $class = shift;
@@ -14,26 +14,30 @@ sub new {
   $self->{ARG} = {@_};
   if(!defined($self->{ARG}->{HOST})) {$self->{ARG}->{HOST}='http://www.freedb.org'}  #Maybe there are some other freedb-web-interfaces ?!
   if(!defined($self->{ARG}->{PATH})) {$self->{ARG}->{PATH}='/freedb_search.php'}
-  if(!defined($self->{ARG}->{DEFAULTVALUES})) {$self->{ARG}->{DEFAULTVALUES}='allfields=NO&allcats=YES&grouping=none'}
+  if(!defined($self->{ARG}->{DEFAULTVALUES})) {$self->{ARG}->{DEFAULTVALUES}='allfields=NO&grouping=none'}
   bless($self, $class);
   $self ? return $self : return undef;
 }
 
 #####
-# Give this method a keyword and a array of fields and it will search on the server for matching cds
+# Give this method a keyword,a array of fields and a array of categories (or nothing)
+# and it will search on the server for matching cds
 # returns a hash urls->(artist,album)
 #####
 sub getdiscs {
   my $self = shift;
   my @keywords = split(/ /,shift);
   my @fields = @{$_[0]};
+  if(defined $_[1]) {@cats = @{$_[1]};}
   my %discs;
   my $url = $self->{ARG}->{HOST}.$self->{ARG}->{PATH}."?".$self->{ARG}->{DEFAULTVALUES};
+
 
   $url .="&words=".shift(@keywords);
   for my $word (@keywords) {
 	$url .= "+".$word;
   }
+  
 
   for my $field (@fields) {
     if(!($field =~ /^(artist|title|track|rest)$/)) {
@@ -42,10 +46,23 @@ sub getdiscs {
 	}
 	$url .= "&fields=".$field;
   }
+  if (defined(@cats)) {
+    $url .= "&allcats=NO";
+    for my $cat (@cats) {
+      if(!($cat =~ /^(blues|classical|country|data|folk|jazz|misc|newage|reggae|rock|soundtrack)$/)) {
+		print STDERR "*unknown cat-type: $cat;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	    next;
+	  }
+	  $url .= "&cats=".$cat;
+    }
+  } else {
+      $url .= "&allcats=YES";
+  }
   print STDERR "**url-search: $url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2);
   my $data = get($url);
   @lines = split(/\n/,$data);
   my $liststart = 0 ;
+  my $lastref;
   for my $line (@lines) {
     if($line =~ /^<h2>all categories<\/h2>$/) {
 	  $liststart=1;
@@ -56,8 +73,24 @@ sub getdiscs {
 	  print STDERR "***list element found $url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3);
 	  if(!(defined($discs{$1}))) {
 		$discs{$1} = [$2,$3];
+		$lastref = undef;
 	  } else {
 	    print STDERR "*already got an disc, taking old one !: $line;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	  }
+	} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
+	  print STDERR "***multilist element found $url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3);
+	  if(!(defined($discs{$1}))) {
+		$discs{$1} = [$2,$3,$4];
+		$lastref = $1;
+	  } else {
+	    print STDERR "*already got an disc, taking old one !: $line;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	  }
+	} elsif (defined($lastref) && $liststart == 2 && $line =~ /^<a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
+	  print STDERR "***more multilist element found $url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3);
+	  if(!(defined($discs{$lastref}))) {
+	    print STDERR "*but no lastref-element found $url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	  } else {
+        push(@{$discs{$lastref}},$1);
 	  }
 	} elsif ( $liststart == 2 && $line =~ /^<\/table>$/) {
       print STDERR "**list end found;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2);
@@ -80,6 +113,10 @@ sub getdiscinfo {
 
   print STDERR "**url-disc:$url;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2);
   my $data = get($url);
+  if (!defined($data)) {
+    print STDERR "*found no disc;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	return ;
+  }
   $disc{url} = $url;
   @lines = split(/\n/,$data);
   $line = shift(@lines);
@@ -114,6 +151,13 @@ sub getdiscinfo {
     print STDERR "*format error(genre):$lines[4];\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
   }
   while (!($line =~ /^<table border=0>$/)) { #ignore until begin of tackinfo
+	if ($line =~ /^<br><hr><center><table width="98%"><tr><td bgcolor="#E8E8E8"><pre>$/) {
+      $line = shift(@lines);
+	  while (!($line =~ /<\/pre><\/tr><\/td><\/table><\/center>/)) {
+	    $disc{rest} .= $line."\n";
+        $line = shift(@lines);
+	  }
+	}
     $line = shift(@lines);
   }
   print STDERR "**found start of trackinfo:$line;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2);
@@ -152,27 +196,66 @@ sub ask4discurls {
 	return 1;
   }
   for (my $i=0;$i<@keys;$i++) {
-    print STDERR "$i) ".$discs{$keys[$i]}[0]." / ".$discs{$keys[$i]}[1]."\n";
+    print STDERR "$i) ".$discs{$keys[$i]}[0]." / ".$discs{$keys[$i]}[1];
+	if (defined $discs{$keys[$i]}[2]) {
+	  print STDERR " [".(@{$discs{$keys[$i]}} - 2)." alternatives]";
+	}
+	print STDERR "\n";
   }
-  print STDERR "Select discs (space seperated numbers or <from>-<to>):\n";
+  print STDERR "Select discs (space seperated numbers or <from>-<to>;alternatives by appending 'A' and alternate-number):\n";
   $userin = <STDIN>;
   chomp $userin;
-  while($userin =~ /(\d+)-(\d+)/) {
+  while($userin =~ /(\d+)A(\d+)-(\d+)A(\d+)/) {                                              # 23A2-42A3 - so with beginning alternatives
+    if(!($1<$3)) {
+      print STDERR "Ignoring $1-$3 ...";
+    }
+    my $tmpadd = $1."A".$2." ";
+    for(my $i=$1+1;$i<=$3-1;$i++) {
+      $tmpadd .= $i." ";
+    }
+	$tmpadd .= $3."A".$4;
+    $userin =~ s/$1A$2-$3A$4/$tmpadd/;
+  }
+  while($userin =~ /(\d+)A(\d+)-(\d+)/) {                                              # 23A2-42 - so with beginning alternatives
+    if(!($1<$3)) {
+      print STDERR "Ignoring $1-$3 ...";
+    }
+    my $tmpadd = $1."A".$2." ";
+    for(my $i=$1+1;$i<=$3;$i++) {
+      $tmpadd .= $i." ";
+    }
+    $userin =~ s/$1A$2-$3/$tmpadd/;
+  }
+  while($userin =~ /(\d+)-(\d+)A(\d+)/) {                                              # 23-42A2 - so with beginning alternatives
     if(!($1<$2)) {
       print STDERR "Ignoring $1-$2 ...";
     }
     my $tmpadd = "";
-    for(my $i=$1;$i<$2;$i++) {
+    for(my $i=$1;$i<=$2-1;$i++) {
+      $tmpadd .= $i." ";
+    }
+	$tmpadd .= $2."A".$3;
+    $userin =~ s/$1-$2A$3/$tmpadd/;
+  }
+  while($userin =~ /(\d+)-(\d+)/) {                                              # 23-42 - so without alternatives
+    if(!($1<$2)) {
+      print STDERR "Ignoring $1-$2 ...";
+    }
+    my $tmpadd = "";
+    for(my $i=$1;$i<=$2;$i++) {
       $tmpadd .= $i." ";
     }
     $userin =~ s/$1-$2/$tmpadd/;
   }
   @select = split (/ /,$userin);
   for my $cd (@select) {
-    if (!($cd =~ /\d+/) || !(defined($keys[$cd]))) {
-      print STDERR "not defined - ignoring!";
-    }
-	push(@urls,$keys[$cd]);
+    if ($cd =~ /^\d+$/ && defined($keys[$cd])) {
+	  push(@urls,$keys[$cd]);
+	} elsif ($cd =~ /^(\d+)A(\d+)$/ && $discs{$keys[$1]}[($2+2)]) {
+	  push(@urls,$discs{$keys[$1]}[($2+2)]);
+    } else {
+      print STDERR "not defined '$cd' - ignoring!\n";
+	}
   }
   return @urls;
 
@@ -183,6 +266,10 @@ sub ask4discurls {
 # returns nothing
 #####
 sub outdumper {
+  if(!defined($disc{url})) {
+    print STDERR "*no disc info \n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	return 1;
+  }
   my $self = shift;
   my $disc = shift;
   print Dumper $disc;
@@ -195,18 +282,45 @@ sub outdumper {
 sub outstd {
   my $self = shift;
   my %disc = %{$_[0]};
-
+  if(!defined($disc{url})) {
+    print STDERR "*no disc info \n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	return 1;
+  }
   print "DiscInfo:\n########\n";
   print "Artist:".$disc{artist}." - Album: ".$disc{cdname}."\n";
   print "Referenz:".$disc{url}."\n";
   print "Total-Tracks:".$disc{tracks}." - Total-Time:".$disc{totaltime}."\n";
   print "Year:".$disc{year}." - Genre:".$disc{genre}."\n";
+  if(defined($disc{rest})) {print "Comment:".$disc{rest}."\n";}
   print "Tracks:\n";
   for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
 	print 1+$i.") ".${$disc{trackinfo}}[$i][0]." (".${$disc{trackinfo}}[$i][1].")\n";
   }
 }
 
+#####
+# Give this method disc-hash of (%disc from discinfo) and the user will be get a element in XML-Format accourding to example/cdcollection.dtd
+# except of the XML-header, footer and root-tag
+# returns nothing
+#####
+sub outxml {
+  my $self = shift;
+  my %disc = %{$_[0]};
+  if(!defined($disc{url})) {
+    print STDERR "*no disc info \n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
+	return 1;
+  }
+  print "<cd>\n";
+  print "\t<artist>".$disc{artist}."</artist>\n";
+  print "\t<titel>".$disc{cdname}."</titel>\n";
+  if (defined($disc{year})) {print "\t<year>".$disc{year}."</year>\n";}
+  print "\t<tracklist>\n";
+  for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
+	print "\t\t<track>".${$disc{trackinfo}}[$i][0]."</track>\n";
+  }
+  print "\t</tracklist>\n";
+  print "<cd>\n";
+}
 
 return 1;
 __END__
@@ -274,18 +388,19 @@ C</freedb_search.php> is default - so working on www.freedb.org
 
 B<DEFAULTVALUES>: Values with will be set for every request.
 
-C<allfields=NO&allcats=YES&grouping=none> is default, so the grouping feature is not supported until now.
+C<allfields=NO&grouping=none> is default, so the grouping feature is not supported until now.
 
 =item B<2. Getting a list of all albums for keywords.>
 
 Now we retrieve a list of CDs, which match to your keywords in given fields.
 Available fields are C<artist,title,track,rest>.
+Available categories are C<blues,classical,country,data,folk,jazz,misc,newage,reggae,rock,soundtrack>
 For explanation see the webinterface.
 
 C<%discs = $cddb-E<gt>getdiscs("Fury in the Slaughterhouse",(artist,rest));>
 
 The returned hash includes as key the urls for retriving the concrete data and as
-value a array of the artist and the album name.
+value a array of the artist,the album name followed by the alternative disc-urls
 
 =item B<3. Selecting discs from the big %discs hash.>
 
@@ -306,7 +421,7 @@ C<%discinfo = $cddb-E<gt>getdiscinfo(@selecteddiscs[0]);>
 
 So we have to call this function n-times if the user selects n cds.
 The hash includes the following keys
-C<url,artist,totaltime,genre,album,trackinfo,tracks,year>
+C<url,artist,totaltime,genre,album,trackinfo,rest,tracks,year>
 These are all string except trackinfo, this is a array of arrays.
 Every of these small arrays represent a track: first its name , second its time.
 
@@ -322,11 +437,17 @@ C<$cddb-E<gt>outdumper(\%discinfo);>
   or
 
 C<$cddb-E<gt>outstd(\%discinfo);>
+  
+  or
 
-These 2 functions print a retrieved disc out.
+C<$cddb-E<gt>outxml(\%discinfo);>
+
+These 3 functions print a retrieved disc out.
+
 The 1st simply uses the Data::Dumper-Module.
 The 2nd does a pretty nice output to the users STDOUT.
-
+The 3rd does a output in XML-Format accourding to example/cdcollection.dtd
+        this method does not use every information (missing are total-time,tracktime,rest)
 I think this is the point for starting your work:
 Take %discinfo and write whereever you want.
 
@@ -334,7 +455,7 @@ Take %discinfo and write whereever you want.
 
 =head1 NOTICE
 
-Be aware this module is in B<ALPHA> stage. 
+Be aware this module is in B<BETA> stage. 
 
 =head1 AUTHOR
 

@@ -1,0 +1,157 @@
+head	1.4;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2002.09.20.08.29.08;	author hmersch;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.09.02.15.06.07;	author hmersch;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.09.02.14.38.10;	author hmersch;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.09.02.14.21.57;	author hmersch;	state Exp;
+branches;
+next	;
+
+
+desc
+@test skript for the PERL-Module FreeDBSearch
+.-
+@
+
+
+1.4
+log
+@changed name
+.-
+@
+text
+@use lib '../blib/lib','../blib/arch';
+
+BEGIN { $| = 1; print "1..3\n"; }
+END {print "not ok 1\n" unless $loaded;}
+use WebService::FreeDB;
+
+$loaded = 1;
+print "ok 1\n";
+
+#testing retrieving of cdlist
+$cddb1 = WebService::FreeDB->new();
+%discs = $cddb1->getdiscs("metallica",("artist","titel"));
+if (length(keys(%discs)) > 0) { print "ok 2\n"; } else { print "not ok 2\n"; }
+
+#testing retriving of a cd
+$cddb2 = WebService::FreeDB->new();
+$url = 'http://www.freedb.org/freedb_search_fmt.php?cat=rock&id=b50ec40c';
+my %discinfo = $cddb2->getdiscinfo($url);
+if ($discinfo{totaltime} eq '63:02' ) { print "ok 3\n"; } else { print "not ok 3\n"; }
+@
+
+
+1.3
+log
+@tests implemnted
+@
+text
+@d5 1
+a5 1
+use Net::FreeDBSearch;
+d11 1
+a11 1
+$cddb1 = FreeDBSearch->new();
+d16 1
+a16 1
+$cddb2 = FreeDBSearch->new();
+@
+
+
+1.2
+log
+@tmp
+@
+text
+@d3 1
+a3 1
+BEGIN { $| = 1; print "1..1\n"; }
+d9 11
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 2
+#!/vol/perl-5.6/bin/perl -w
+#use lib '/homes/hmersch/perllib/lib/site_perl/5.6.1';
+d3 3
+a5 53
+use FreeDBSearch;
+use Data::Dumper;
+$usage='cdget.pl [options] <keyword> <field>...
+  <keyword>:   keyword for search
+  <field>:     one or more of:artist|title|track|rest (space sep.)
+  known options:
+  --debug=[0,1,2,3]:   Debug information (default=0)
+  -outformat=[std|Dumper]:   Output format of selected discs
+  TBC...
+';
+my $debuglevel = 0;
+my $outformat = "std";
+
+while (defined($ARGV[0]) && $ARGV[0] =~ /^-.+$/) {
+  my $opt = shift;
+  if ($opt =~ /-debug=(\d)/) {
+	$debuglevel = $1;
+  } elsif ($opt =~ /outformat=(std|dumper)/i) {
+	$outformat = $1;
+  } else {
+	print "unknown option:$opt\n";
+	print $usage;
+	exit 0;
+  }
+}
+if (!defined($ARGV[1])) {
+  print $usage;
+  exit 0;
+  }
+$keyword = shift;
+@@fields = @@ARGV;
+
+# 1st lets create a object ...
+#$debuglevel = 0; #maybe 0..3
+#$keyword = "Fury in the Slaughterhouse"; #setting the keywords ...
+#@@fields = (artist,rest) # may combination from artist,titel,rest,track
+
+$cddb = FreeDBSearch->new(DEBUG=>$debuglevel);
+
+#2nd gets a list of discs, which are matching to $keyword in @@fields
+%discs = $cddb->getdiscs($keyword,\@@fields);
+#3rd asks user to select one or more of the found discs
+@@selecteddiscs = $cddb->ask4discurls(\%discs);
+for my $url (@@selecteddiscs) {
+  #4th get the discinfo
+  my %discinfo = $cddb->getdiscinfo($url);
+  #5th prints the discinfo out
+  if ($outformat =~ /Dumper/i) {$cddb->outdumper(\%discinfo)}
+  elsif ($outformat =~/std/i) {$cddb->outstd(\%discinfo)}
+  else {die "unknown outtype"}
+}
+#6th: We are happy !
+#
+d7 2
+@
