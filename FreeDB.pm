@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.61';
+$VERSION = '0.62';
 
 #####
 # Description: for getting a instace of this Class
@@ -453,6 +453,7 @@ sub outxml {
       }
     }
     print "\t</tracklist>\n";
+    print "</cd>\n";
 }
 #####
 # Description: PRIVATE - not for use outside !

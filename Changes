@@ -48,3 +48,5 @@ Revision history for Perl extension WebService::FreeDB
 
 0.61 Fri Sep 26 11:35:12 CEST 2003
   - new upload to CPAN - version problem
+0.62 Fri Sep 26 13:31:31 CEST 2003
+  - XML Output closing CD Tag inserted (where has it gone ??? ;-) )
