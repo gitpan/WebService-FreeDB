@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use FreeDB;
+use WebService::FreeDB;
 use Data::Dumper;
 $usage='cdget.pl [options] <keyword> <field>...
   <keyword>:   keyword for search

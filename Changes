@@ -15,3 +15,7 @@ Revision history for Perl extension WebService::FreeDB
     (only for a CD - does it exist for every track ?)
   - example/cdsearch does now accept a direkt cd-url for retrieving driectly
   - xml-output-method 
+
+0.41 Wed Oct 23 15:40:41 MEST 2002
+  -fixed cdsearch use..
+   sorry for this....
