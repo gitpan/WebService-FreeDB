@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.52';
+$VERSION = '0.55';
 
 sub new {
   my $class = shift;
@@ -298,7 +298,7 @@ sub outstd {
   }
   print "DiscInfo:\n########\n";
   print "Artist:".$disc{artist}." - Album: ".$disc{cdname}."\n";
-  print "Referenz:".$disc{url}."\n";
+  print "Reference:".$disc{url}."\n";
   print "Total-Tracks:".$disc{tracks}." - Total-Time:".$disc{totaltime}."\n";
   print "Year:".$disc{year}." - Genre:".$disc{genre}."\n";
   if(defined($disc{rest})) {print "Comment:".$disc{rest}."\n";}
@@ -332,7 +332,7 @@ sub outxml {
   print "</cd>\n";
 }
 ####
-# gets an string and returns it in xml coding-stadart (&->&amp; ...)
+# gets a string and returns it in xml coding-stadart (&->&amp; ...)
 ####
 sub ascii2xml {
   $ascii = $_[0];
@@ -351,21 +351,28 @@ __END__
 
 =head1 NAME
 
-WebService::FreeDB - retrieving entrys from FreeDB by searching for keywords (artist,track,album,rest)
+WebService::FreeDB - retrieving entries from FreeDB by searching for keywords (artist,track,album,rest)
 
 =head1 SYNOPSIS
 
-C<use WebService::FreeDB;>
+    use WebService::FreeDB;
 
-       Create an Object
+    # Create an Object
     $freedb = WebService::FreeDB->new();
-       Get a list of all discs matching 'Fury in the Slaughterhouse'
-    %discs = $cddb->getdiscs("Fury in the Slaughterhouse",(artist,rest));
-       Asks user to select one or more of the found discs
+
+    #  Get a list of all discs matching 'Fury in the Slaughterhouse'
+    %discs = $cddb->getdiscs(
+	    "Fury in the Slaughterhouse",
+	    ['artist','rest']
+    );
+
+    # Asks user to select one or more of the found discs
     @selecteddiscs = $cddb->ask4discurls(\%discs);
-       Get a disc
+
+    # Get a disc
     %discinfo = $cddb->getdiscinfo(@selecteddiscs[0]);
-       print disc-information to STDOUT - pretty nice formated
+
+    # print disc-information to STDOUT - pretty nice formatted
     $cddb->outstd(\%discinfo);
 
 =head1 DESCRIPTION
@@ -387,14 +394,13 @@ artist of a song, all songs of an artist, all CDs of an artist or whatever.
 
 This has to be the first step
 
-C<my $cddb = WebService::FreeDB-E<gt>new()>
+    my $cddb = WebService::FreeDB->new()
 
 You can configure the behaviour of the Module giving new() optional parameters:
 
-Usage is really simple: e.g. 
+Usage is really simple. To set the debug level to 1, simply:
 
-C<my $cddb = WebService::FreeDB-E<gt>new(DEBUG =E<gt>1)>
-sets the debuglevel to 1.
+    my $cddb = WebService::FreeDB->new( DEBUG => 1 )
 
 B<optional prameters>
 B<DEBUG>: [0 to 3] - Debugging information,
@@ -421,7 +427,10 @@ Available fields are C<artist,title,track,rest>.
 Available categories are C<blues,classical,country,data,folk,jazz,misc,newage,reggae,rock,soundtrack>
 For explanation see the webinterface.
 
-C<%discs = $cddb-E<gt>getdiscs("Fury in the Slaughterhouse",(artist,rest));>
+    %discs = $cddb->getdiscs(
+	"Fury in the Slaughterhouse",
+	[qw( artist rest )]
+    );
 
 The returned hash includes as key the urls for retriving the concrete data and as
 value a array of the artist,the album name followed by the alternative disc-urls
@@ -456,24 +465,16 @@ Some entries in FreeDB store an other number of tracks than they have stored !
 
 Now the last step is to print the information to the user.
 
-C<$cddb-E<gt>outdumper(\%discinfo);>
-
-  or
-
-C<$cddb-E<gt>outstd(\%discinfo);>
-  
-  or
-
-C<$cddb-E<gt>outxml(\%discinfo);>
+    $cddb->outdumper(\%discinfo); # Like Data::Dumper
+    $cddb->outstd(\%discinfo); # nicely formatted to stdout
+    $cddb->outxml(\%discinfo); # XML format
 
 These 3 functions print a retrieved disc out.
 
-The 1st simply uses the Data::Dumper-Module.
-The 2nd does a pretty nice output to the users STDOUT.
-The 3rd does a output in XML-Format accourding to example/cdcollection.dtd
-        this method does not use every information (missing are total-time,tracktime,rest)
-I think this is the point for starting your work:
-Take %discinfo and write whereever you want.
+The XML format outputs according to example/cdcollection.dtd this method
+does not use every information (missing are total-time,tracktime,rest). I
+think this is the point for starting your work: Take %discinfo and write
+where ever you want.
 
 =back
 
@@ -483,7 +484,7 @@ Be aware this module is in B<BETA> stage.
 
 =head1 AUTHOR
 
-Copyright 2002, Henning Mersch All rights reserved.
+Copyright 2002-2003, Henning Mersch All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
