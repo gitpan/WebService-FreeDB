@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.4';
+$VERSION = '0.5';
 
 sub new {
   my $class = shift;
@@ -150,6 +150,10 @@ sub getdiscinfo {
   } else {
     print STDERR "*format error(genre):$lines[4];\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1);
   }
+  if(!defined($disc{artist})) {$disc{artist} = "";}
+  if(!defined($disc{cdname})) {$disc{cdname} = "";}
+  if(!defined($disc{year})) {$disc{year} = "";}
+  if(!defined($disc{genre})) {$disc{genre} = "";}
   while (!($line =~ /^<table border=0>$/)) { #ignore until begin of tackinfo
 	if ($line =~ /^<br><hr><center><table width="98%"><tr><td bgcolor="#E8E8E8"><pre>$/) {
       $line = shift(@lines);
@@ -159,6 +163,10 @@ sub getdiscinfo {
 	  }
 	}
     $line = shift(@lines);
+    if (!defined($line)) {
+	  $disc{trackinfo} = defined;
+	  return %disc;  #break if not found beginning (empty entries)
+	}
   }
   print STDERR "**found start of trackinfo:$line;\n" if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2);
   $index = 1;
@@ -188,13 +196,15 @@ sub getdiscinfo {
 sub ask4discurls {
   my $self = shift;
   my %discs = %{$_[0]};
-  my @keys = keys (%discs);
+  #my @keys = keys (%discs);
+  my @keys = sort { $discs{$a}[0] cmp $discs{$b}[0] || $DIscs{$a}[1] cmp $discs{$b}[1]} keys %discs;   #sort for artists
   my @urls;
   
   if(!defined($keys[0])) {
     print STDERR "Sorry - no matching discs found\n";
 	return 1;
   }
+  #giving list 2 user
   for (my $i=0;$i<@keys;$i++) {
     print STDERR "$i) ".$discs{$keys[$i]}[0]." / ".$discs{$keys[$i]}[1];
 	if (defined $discs{$keys[$i]}[2]) {
@@ -311,15 +321,29 @@ sub outxml {
 	return 1;
   }
   print "<cd>\n";
-  print "\t<artist>".$disc{artist}."</artist>\n";
-  print "\t<titel>".$disc{cdname}."</titel>\n";
-  if (defined($disc{year})) {print "\t<year>".$disc{year}."</year>\n";}
+  print "\t<artist>".ascii2xml($disc{artist})."</artist>\n";
+  print "\t<titel>".ascii2xml($disc{cdname})."</titel>\n";
+  if (defined($disc{year})) {print "\t<year>".ascii2xml($disc{year})."</year>\n";}
   print "\t<tracklist>\n";
   for (my $i=0;$i<@{$disc{trackinfo}};$i++) {
-	print "\t\t<track>".${$disc{trackinfo}}[$i][0]."</track>\n";
+	print "\t\t<track>".ascii2xml(${$disc{trackinfo}}[$i][0])."</track>\n";
   }
   print "\t</tracklist>\n";
   print "<cd>\n";
+}
+####
+# gets an string and returns it in xml coding-stadart (&->&amp; ...)
+####
+sub ascii2xml {
+  $ascii = $_[0];
+
+  $ascii =~ s/&/&amp;/g;
+  $ascii =~ s/</&lt;/g;
+  $ascii =~ s/>/&gt;/g;
+  $ascii =~ s/'/&apos;/g;
+  $ascii =~ s/"/&quot;/g;
+  
+  return $ascii;
 }
 
 return 1;

@@ -2,7 +2,7 @@
 
 use WebService::FreeDB;
 use Data::Dumper;
-$usage='cdget.pl [options] <keyword> <field>...
+$usage='cdsearch.pl [options] <keyword> <field>...
   <keyword>:   keyword for search
   <field>:     one or more of fields :artist|title|track|rest
                or categories:blues|classical|country|data|folk|jazz|misc|newage|reggae|rock|soundtrack

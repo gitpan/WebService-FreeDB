@@ -19,3 +19,7 @@ Revision history for Perl extension WebService::FreeDB
 0.41 Wed Oct 23 15:40:41 MEST 2002
   -fixed cdsearch use..
    sorry for this....
+0.5 
+  -ask4urls now prints a sorted list
+  -now empty db-entries does not matter
+  -xml output will now special coded (& -> &emph; and so on)
