@@ -106,12 +106,12 @@ sub getdiscs {
 		for my $line (@lines) {
 			if($line =~ /^<h2>all categories<\/h2>$/) {
 				$liststart=1;
-			} elsif ( $liststart == 1 && $line =~ /<table border=0>/){
+			} elsif ( $liststart == 1 && $line =~ /<table border=0/){
 				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
 					print STDERR "**list start found;\n";
 				}
 				$liststart=2;
-			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><br><\/tr>/ ) {
+			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br>/ ) {
   				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
 					print STDERR "***list element found $url;\n";
 				}
@@ -279,8 +279,7 @@ sub getdiscinfo {
 		
 		}
 		return %disc;
-	}								
-	else {							
+	} else {							
 		die $response->status_line;	
 	}								
 }

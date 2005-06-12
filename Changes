@@ -58,3 +58,6 @@ Revision history for Perl extension WebService::FreeDB
 0.7  Wed Nov  5 17:10:11 MET 2003
   - added proxy support
     (developed by Joerg Bensch - many THX to him!)
+0.71 Sun Jun 12 12:44:44 MEST 200
+  - Patched due to new html code by freedb.org
+    Thanks goes to Stew Benedict for hint and the patch !
