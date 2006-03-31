@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.7';
+$VERSION = '0.72';
 
 #####
 # Description: for getting a instace of this Class
@@ -104,7 +104,8 @@ sub getdiscs {
 		my $liststart = 0 ;
 		my $lastref;
 		for my $line (@lines) {
-			if($line =~ /^<h2>all categories<\/h2>$/) {
+		    #if($line =~ /^<h2>all categories<\/h2>$/) {  #update at 31.3.06: changed this
+			if($line =~ /^<h2>freedb music CD search results<\/h2>$/) {
 				$liststart=1;
 			} elsif ( $liststart == 1 && $line =~ /<table border=0/){
 				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
