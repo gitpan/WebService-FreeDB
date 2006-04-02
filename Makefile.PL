@@ -20,7 +20,7 @@ sub MY::libscan
 #--- Write the Makefile
 
 WriteMakefile(
-	VERSION   => '0.72',
+	VERSION   => '0.73',
 	NAME      => 'WebService::FreeDB',
 	AUTHOR    => 'Henning Mersch <hm@mystical.de>',
 	ABSTRACT  => 'Module to search a keyword in a FreeDB-Database.',

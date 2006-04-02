@@ -112,19 +112,7 @@ sub getdiscs {
 					print STDERR "**list start found;\n";
 				}
 				$liststart=2;
-			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br>/ ) {
-  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
-					print STDERR "***list element found $url;\n";
-				}
-				if(!(defined($discs{$1}))) {
-					$discs{$1} = [$2,$3];
-					$lastref = undef;
-				} else {
-  					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
-						print STDERR "*already got an disc, taking old one !: $line;\n";
-					}
-				}
-			} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br><a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
+			} elsif ( $liststart == 2 && $line =~ /<tr><td><a href="(.+)">(.+) \/ (.+)<\/a> &nbsp; <a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
  			  	if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
 					print STDERR "***multilist element found $url;\n";
 				}
@@ -134,6 +122,19 @@ sub getdiscs {
 				} else {
 					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
 				   		print STDERR "*already got an disc, taking old one !: $line;\n";
+					}
+				}
+				#} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br>/ ) {
+			} elsif ( $liststart == 2 && $line =~ /<tr><td><a href="(.+)">(.+) \/ (.+)<\/a>/ ) {
+  				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
+					print STDERR "***list element found $url;\n";
+				}
+				if(!(defined($discs{$1}))) {
+					$discs{$1} = [$2,$3];
+					$lastref = undef;
+				} else {
+  					if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
+						print STDERR "*already got an disc, taking old one !: $line;\n";
 					}
 				}
 			} elsif (defined($lastref) && $liststart == 2 && $line =~ /^<a href="(.+)"><font size=-1>\d+<\/font><\/a>/ ) {
