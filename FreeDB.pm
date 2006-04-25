@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.72';
+$VERSION = '0.75';
 
 #####
 # Description: for getting a instace of this Class
@@ -125,7 +125,7 @@ sub getdiscs {
 					}
 				}
 				#} elsif ( $liststart == 2 && $line =~ /^<tr><td><a href="(.+)">(.+) \/ (.+)<\/a><br>/ ) {
-			} elsif ( $liststart == 2 && $line =~ /<tr><td><a href="(.+)">(.+) \/ (.+)<\/a>/ ) {
+			} elsif ( $liststart == 2 && $line =~ /<tr><td><b><a href="(.+)">(.+) \/ (.+)<\/a>/ ) {
   				if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 3) {
 					print STDERR "***list element found $url;\n";
 				}
@@ -282,6 +282,7 @@ sub getdiscinfo {
 		}
 		return %disc;
 	} else {							
+	  #print STDERR "Url was: ".$url."\n";
 		die $response->status_line;	
 	}								
 }
