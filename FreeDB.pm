@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.75';
+$VERSION = '0.76';
 
 #####
 # Description: for getting a instace of this Class
@@ -210,7 +210,12 @@ sub getdiscinfo {
 				print STDERR "*format error(artist+album):$lines[0];\n";
 			}
 		}
-		if ($lines[1] =~ /^tracks:\s*?(\d+)<br>$/) {
+		#ignore commercials
+		while (!($lines[1] =~ /^\s*tracks:\s*?(\d+)<br>$/)) {
+			shift(@lines);
+		}
+
+		if ($lines[1] =~ /^\s*tracks:\s*?(\d+)<br>$/) {
 			$disc{tracks} = $1;
 		} else {
   			if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 1) {
