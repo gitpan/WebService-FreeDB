@@ -76,5 +76,6 @@ Revision history for Perl extension WebService::FreeDB
 0.76 Tue Apr 25 10:45:34 CEST 2006
   - Again patched due to changes at HTML Interface (track view commercial)
 
-
+0.77 Wed Sep  6 13:10:33 CEST 2006
+  - Again patched due to changes at HTML Interface
 
