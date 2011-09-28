@@ -79,3 +79,6 @@ Revision history for Perl extension WebService::FreeDB
 0.77 Wed Sep  6 13:10:33 CEST 2006
   - Again patched due to changes at HTML Interface
 
+0.78 2011-09-28 rurban
+  - Again patched due to changes at HTML Interface (single line results with JS expansion)
+    Limitation: getdiscs only returns the first 10 results of the query
