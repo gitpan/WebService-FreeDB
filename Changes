@@ -82,3 +82,7 @@ Revision history for Perl extension WebService::FreeDB
 0.78 2011-09-28 rurban
   - Again patched due to changes at HTML Interface (single line results with JS expansion)
     Limitation: getdiscs only returns the first 10 results of the query
+
+0.79 2012-02-28 rurban
+  - Fixed defined(@array) for 5.16
+  - More stable searchResult data matcher, which works with empty HTML lines. Still a mess though.

@@ -6,7 +6,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw//;
 @EXPORT_OK = qw/getdiscs getdiscinfo ask4discurls outdumper outstd/;
-$VERSION = '0.78';
+$VERSION = '0.79';
 
 #####
 # Description: for getting a instace of this Class
@@ -74,7 +74,7 @@ sub getdiscs {
 		}
 		$url .= "&fields=".$field;
 	}
-	if (defined(@cats)) {
+	if (@cats) {
 		$url .= "&allcats=NO";
 		for my $cat (@cats) {
 			if(!($cat =~ /^(blues|classical|country|data|folk|jazz|misc|newage|reggae|rock|soundtrack)$/)) {
@@ -100,14 +100,7 @@ sub getdiscs {
 	my $response = $ua->request($req);
 	if ($response->is_success) {
 		my $data = $response->content;
-		@lines = split /\n/, $data ;
-		my $liststart = 0 ;
-		my $lastref;
-		my $line = shift @lines;
-		while (!($line =~ m|^<a name="fdbsr"></a>|)) {
-		  $line = shift @lines; 
-		  last unless $line;
-		}
+		my ($line) = grep {m|^<a name="fdbsr"></a>|} split(/\n/, $data);
 		die "no match" unless $line;
                 $discs{$1} = [$2,$3]
 		  while $line =~ m|<a href="(.+?)" class=searchResultTopLinkA .+? title=".+? / .+?">(.+?) / (.+?)</a></td>|g;
@@ -150,7 +143,7 @@ sub getdiscinfo {
 		#ignore until begin of searchResult data
 		while (!($line =~ m|^<a name="fdbsr"></a>|)) {
 		  $line = shift(@lines);
-		  last unless $line;
+		  last unless @lines;
 		}
 		if (defined $self->{ARG}->{DEBUG} && $self->{ARG}->{DEBUG} >= 2) {
 			print STDERR "**found start of data :$line;\n"; 
